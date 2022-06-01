@@ -8,6 +8,68 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.dates
 
+def parsing_value(country, date):
+    response = urllib.request.urlopen("http://www.cbr.ru/scripts/XML_daily.asp?date_req=" + datetime.strftime(date, "%d/%m/%Y"))
+    dom = xml.dom.minidom.parse(response)
+    dom.normalize()
+    nodeArray = dom.getElementsByTagName("Valute")
+    for node in nodeArray:
+        childList = node.childNodes
+        for child in childList:
+            if child.nodeName == "Name":
+                if child.childNodes[0].nodeValue == country:
+                    for childd in childList:
+                        if childd.nodeName == "Value":
+                            value = childd.childNodes[0].nodeValue
+    return value
+
+def sellect_period():
+    periodscheck = []
+    now = date.today()
+    temp = now
+    flag = True
+
+    if RadioB_Sellector.get()==1:
+        delta = timedelta(weeks = 1)
+    elif RadioB_Sellector.get()==2:
+        delta = timedelta(weeks = 4.4)
+    elif RadioB_Sellector.get() == 3:
+        for i in range(4):
+            ost = int(datetime.strftime(temp, "%m")) % 3
+            delta = timedelta(weeks=ost * 4.4)
+            temp = temp - delta
+            string = temp.strftime("%d/%m/%Y") + ' - '
+            delta = timedelta(weeks=13.2)
+            temp = temp - delta
+            string += datetime.strftime(temp, "%d/%m/%Y")
+            periodscheck.append(string)
+        CB_Periods['values'] = periodscheck
+        flag = False
+    elif RadioB_Sellector.get()==4:
+        delta = timedelta(weeks = 52)
+
+    if flag:
+        for i in range(4):
+            string = temp.strftime("%d/%m/%Y") + ' - '
+            temp = temp - delta
+            string+=datetime.strftime(temp,"%d/%m/%Y")
+            periodscheck.append(string)
+        CB_Periods['values'] = periodscheck
+
+def convert_value():
+    x = CB_Country1.get()
+    y = CB_Country2.get()
+    z = ToConvertField_Entry.get()
+
+    x = Valutues[Countries.index(x)]
+    y = Valutues[Countries.index(y)]
+
+    x = float(x.replace(',','.'))
+    y = float(y.replace(',', '.'))
+    z = float(z)
+
+    res = "Converted: " + str(round(float((x*z)/y),2))
+    ConvertedField_Label.configure(text = res)
 
 def parsing_countries(date):
     response = urllib.request.urlopen("http://www.cbr.ru/scripts/XML_daily.asp?date_req=" + datetime.strftime(date, "%d/%m/%Y"))
@@ -23,20 +85,6 @@ def parsing_countries(date):
                 Valutues.append(child.childNodes[0].nodeValue)
     return Countries, Valutues
 
-def parsing_value(country, date):
-    response = urllib.request.urlopen("http://www.cbr.ru/scripts/XML_daily.asp?date_req=" + datetime.strftime(date, "%d/%m/%Y"))
-    dom = xml.dom.minidom.parse(response)
-    dom.normalize()
-    nodeArray = dom.getElementsByTagName("Valute")
-    for node in nodeArray:
-        childList = node.childNodes
-        for child in childList:
-            if child.nodeName == "Name":
-                if child.childNodes[0].nodeValue == country:
-                    for childd in childList:
-                        if childd.nodeName == "Value":
-                            value = childd.childNodes[0].nodeValue
-    return value
 
 def print_graf():
     period = CB_Periods.get()
@@ -141,58 +189,6 @@ def print_graf():
         matplotlib.pyplot.plot(x, y)
         matplotlib.pyplot.grid()
         plot_widget.grid(row=5, column=5)
-
-
-
-def sellect_period():
-    periodscheck = []
-    now = date.today()
-    temp = now
-    flag = True
-
-    if RadioB_Sellector.get()==1:
-        delta = timedelta(weeks = 1)
-    elif RadioB_Sellector.get()==2:
-        delta = timedelta(weeks = 4.4)
-    elif RadioB_Sellector.get() == 3:
-        for i in range(4):
-            ost = int(datetime.strftime(temp, "%m")) % 3
-            delta = timedelta(weeks=ost * 4.4)
-            temp = temp - delta
-            string = temp.strftime("%d/%m/%Y") + ' - '
-            delta = timedelta(weeks=13.2)
-            temp = temp - delta
-            string += datetime.strftime(temp, "%d/%m/%Y")
-            periodscheck.append(string)
-        CB_Periods['values'] = periodscheck
-        flag = False
-    elif RadioB_Sellector.get()==4:
-        delta = timedelta(weeks = 52)
-
-    if flag:
-        for i in range(4):
-            string = temp.strftime("%d/%m/%Y") + ' - '
-            temp = temp - delta
-            string+=datetime.strftime(temp,"%d/%m/%Y")
-            periodscheck.append(string)
-        CB_Periods['values'] = periodscheck
-
-def convert_value():
-    x = CB_Country1.get()
-    y = CB_Country2.get()
-    z = ToConvertField_Entry.get()
-
-    x = Valutues[Countries.index(x)]
-    y = Valutues[Countries.index(y)]
-
-    x = float(x.replace(',','.'))
-    y = float(y.replace(',', '.'))
-    z = float(z)
-
-    res = "Converted: " + str(round(float((x*z)/y),2))
-    ConvertedField_Label.configure(text = res)
-
-
 """
 Описываем весь Layout
 """
