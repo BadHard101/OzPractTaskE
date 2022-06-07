@@ -16,12 +16,9 @@ def parsing_value(country, date):
     for node in nodeArray:
         childList = node.childNodes
         for child in childList:
-            if child.nodeName == "Name":
-                if child.childNodes[0].nodeValue == country:
-                    for childd in childList:
-                        if childd.nodeName == "Value":
-                            value = childd.childNodes[0].nodeValue
-    return value
+            if childList[3].firstChild.nodeValue == country:
+                return float((childList[4].firstChild.nodeValue).replace(",", "."))
+
 
 def sellect_period():
     periodscheck = []
@@ -60,29 +57,38 @@ def convert_value():
     x = CB_Country1.get()
     y = CB_Country2.get()
     z = ToConvertField_Entry.get()
-
-    x = Valutues[Countries.index(x)]
-    y = Valutues[Countries.index(y)]
-
-    x = float(x.replace(',','.'))
-    y = float(y.replace(',', '.'))
     z = float(z)
 
-    res = "Converted: " + str(round(float((x*z)/y),2))
-    ConvertedField_Label.configure(text = res)
+    if x == "Рубль":
+        y = Valutues[Countries.index(y)]
+        res1 = round(z/y, 5)
+        res = "Converted: " + str(res1)
+        ConvertedField_Label.configure(text=res)
+    elif y == "Рубль":
+        x = Valutues[Countries.index(x)]
+        res1 = round(z*x, 5)
+        res = "Converted: " + str(res1)
+        ConvertedField_Label.configure(text=res)
+    else:
+        x = Valutues[Countries.index(x)]
+        y = Valutues[Countries.index(y)]
+        res1 = str(round(float((x * z) / y), 5))
+        res = "Converted: " + res1
+        ConvertedField_Label.configure(text=res)
 
-def parsing_countries(date):
+    # res = "Converted: " + str(round(float((x*z)/y),7))
+    # ConvertedField_Label.configure(text = res)
+
+def parsing(date):
     response = urllib.request.urlopen("http://www.cbr.ru/scripts/XML_daily.asp?date_req=" + datetime.strftime(date, "%d/%m/%Y"))
     dom = xml.dom.minidom.parse(response)
     dom.normalize()
     nodeArray = dom.getElementsByTagName("Valute")
     for node in nodeArray:
         childList = node.childNodes
-        for child in childList:
-            if child.nodeName == "Name":
-                Countries.append(child.childNodes[0].nodeValue)
-            if child.nodeName == "Value":
-                Valutues.append(child.childNodes[0].nodeValue)
+        Countries.append(childList[3].firstChild.nodeValue)
+        Valutues.append(
+            float((childList[4].firstChild.nodeValue).replace(",", ".")) / float(childList[2].firstChild.nodeValue))
     return Countries, Valutues
 
 
@@ -103,7 +109,6 @@ def print_graf():
         temp2 = datetime.strptime(period[0],"%d/%m/%Y")
         while(temp1!=temp2+raz):
             k = parsing_value(country, temp1)
-            k = k.replace(',','.')
             k = float(k)
             print(k)
             x.append(datetime.strftime(temp1, "%d.%b"))
@@ -128,7 +133,6 @@ def print_graf():
         temp2 = datetime.strptime(period[0], "%d/%m/%Y")
         while (temp1 != temp2 + raz):
             k = parsing_value(country, temp1)
-            k = k.replace(',', '.')
             k = float(k)
             if (datetime.strftime(temp1, "%d")) in x:
                 x.append(datetime.strftime(temp1, "%d."))
@@ -156,7 +160,6 @@ def print_graf():
         while (temp1 < temp2):
             k = parsing_value(country, temp1)
             if k!=None:
-                k = k.replace(',', '.')
                 k = float(k)
                 x.append(datetime.strftime(temp1, "%d.%m.%y"))
                 y1 = round(k,2)
@@ -179,7 +182,6 @@ def print_graf():
         temp2 = datetime.strptime(period[0], "%d/%m/%Y")
         while (temp1 < temp2 + raz):
             k = parsing_value(country, temp1)
-            k = k.replace(',', '.')
             k = float(k)
             x.append(datetime.strftime(temp1, "%b.%y"))
             y1 = round(k,2)
@@ -221,7 +223,10 @@ def main():
 
     Controller.add(Calculator, text="Калькулятор валют")
 
-    Countries = parsing_countries(datetime.today())[0]
+    Countries = parsing(datetime.today())[0]
+    Valutues = parsing(datetime.today())[1]
+    Countries.append('Рубль')
+    Valutues.append(1.0)
 
     CB_Country1.grid(row=0, column=0, padx=10, pady=10, ipadx=25)
     CB_Country1['values'] = Countries
@@ -242,6 +247,7 @@ def main():
     CBPeriod_Label.grid(row = 0, column = 2, ipadx = 25)
 
     CB_Country3.grid(row=1, column=0, padx=10, pady=10, ipadx=25)
+    Countries.remove('Рубль')
     CB_Country3['values'] = Countries
 
     RB_WeekPeriod = Radiobutton(Grafic, text='Неделя', value=1, variable=RadioB_Sellector, command=sellect_period)
